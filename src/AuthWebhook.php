@@ -34,6 +34,6 @@ class AuthWebhook extends Auth
             http_response_code(403);
             exit("X-Gitlab-Token is not allowed to access");
         }
-        return parent::auth();
+        return $this->authByIp();
     }
 }
