@@ -8,7 +8,7 @@ try {
     $a->setConfig($confs);
     $a->auth();
     $Cr = new RegistryBuilder();
-    $Cr->setClient($a->getClient());
+    $Cr->setUserClient($a->getClient());
     $Cr->setConfig($confs);
     $Cr->outputFile();
 } catch (\Exception $ex) {

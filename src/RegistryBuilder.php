@@ -16,6 +16,19 @@ class RegistryBuilder
 
     protected $confs;
     protected $client;
+    protected $userClient;
+
+
+    public function build() {
+        $packageName = $_GET['p'];
+        $projectId = $this->getProjectIdFromPackageName($packageName);
+        $client = $this->getUserClient();
+        $repositories = $client->repositories;
+        $c = $repositories->getFile($projectId, 'composer.json', $ref);
+
+
+    }
+
 
     public function setConfig($confs){
         $this->confs = $confs;
@@ -237,7 +250,8 @@ class RegistryBuilder
     }
 
 
-    public function build()
+
+    public function getProjectFromPackageName($packageName)
     {
         $confs = $this->confs;
         $client = $this->getClient();
@@ -279,7 +293,7 @@ class RegistryBuilder
         $me = $this->getClient()->users()->me();
         $this->packages_file = $packages_file = $this->packages_filebase . $this->confs['api_key'] . 'json';
         // Regenerate packages_file is need
-        if (!file_exists($packages_file) || filemtime($packages_file) < $mtime) {
+        //if (!file_exists($packages_file) || filemtime($packages_file) < $mtime) {
             $packages = array();
             foreach ($all_projects as $project) {
                 if (($package = $this->load_data($project)) && ($package_name = $this->get_package_name($project))) {
@@ -310,8 +324,8 @@ class RegistryBuilder
             ), JSON_PRETTY_PRINT);
 
             file_put_contents($packages_file, $data);
-        }
     }
+
 
     /**
      * @param $confs
@@ -331,6 +345,19 @@ class RegistryBuilder
 
     public function setClient($client){
         $this->client = $client;
+    }
+
+    /**
+     * @param $confs
+     * @return Client
+     */
+    public function getUserClient()
+    {
+        return $this->userClient;
+    }
+
+    public function setUserClient($client){
+        $this->userClient = $client;
     }
 
 }
