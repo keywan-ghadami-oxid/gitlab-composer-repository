@@ -20,11 +20,77 @@ class RegistryBuilder
 
 
     public function build() {
-        $packageName = $_GET['p'];
-        $projectId = $this->getProjectIdFromPackageName($packageName);
-        $client = $this->getUserClient();
-        $repositories = $client->repositories;
-        $c = $repositories->getFile($projectId, 'composer.json', $ref);
+        $confs = $this->confs;
+        $client = $this->getClient();
+
+        $groups = $client->api('groups');
+        /**
+         * @var $projects Projects
+         */
+        $projects = $client->api('projects');
+        $this->projects = $projects;
+        $this->repos = $repos = $client->api('repositories');
+
+        // Load projects
+        $all_projects = array();
+        $mtime = 0;
+        if (!empty($confs['groups'])) {
+            // We have to get projects from specifics groups
+            foreach ($groups->all(array('page' => 1, 'per_page' => 100)) as $group) {
+                if (!in_array($group['name'], $confs['groups'], true)) {
+                    continue;
+                }
+                for ($page = 1; count($p = $groups->projects($group['id'], array('page' => $page, 'per_page' => 100))); $page++) {
+                    foreach ($p as $project) {
+                        $all_projects[] = $project;
+                        $mtime = max($mtime, strtotime($project['last_activity_at']));
+                    }
+                }
+            }
+        } else {
+            // We have to get all accessible projects
+            for ($page = 1; count($p = $projects->all(array('page' => $page, 'per_page' => 100))); $page++) {
+                foreach ($p as $project) {
+                    $all_projects[] = $project;
+                    $mtime = max($mtime, strtotime($project['last_activity_at']));
+                }
+            }
+        }
+
+        $me = $this->getClient()->users()->me();
+        $this->packages_file = $packages_file = $this->packages_filebase . $this->confs['api_key'] . 'json';
+        // Regenerate packages_file is need
+        //if (!file_exists($packages_file) || filemtime($packages_file) < $mtime) {
+        $packages = array();
+        foreach ($all_projects as $project) {
+            if (($package = $this->load_data($project)) && ($package_name = $this->get_package_name($project))) {
+                $packages[$package_name] = $package;
+            }
+        }
+        if (file_exists($this->static_file)) {
+            $static_packages = json_decode(file_get_contents($this->static_file));
+            foreach ($static_packages as $name => $package) {
+                foreach ($package as $version => $root) {
+                    if (isset($root->extra)) {
+                        $source = '_source';
+                        while (isset($root->extra->{$source})) {
+                            $source = '_' . $source;
+                        }
+                        $root->extra->{$source} = 'static';
+                    } else {
+                        $root->extra = array(
+                            '_source' => 'static',
+                        );
+                    }
+                }
+                $packages[$name] = $package;
+            }
+        }
+        $data = json_encode(array(
+            'packages' => array_filter($packages),
+        ), JSON_PRETTY_PRINT);
+
+        file_put_contents($packages_file, $data);
 
 
     }
@@ -39,7 +105,7 @@ class RegistryBuilder
      */
     function outputFile()
     {
-        $this->build();
+        //$this->build();
         $file = $this->packages_file;
         $mtime = filemtime($file);
 
@@ -156,6 +222,7 @@ class RegistryBuilder
 
         file_put_contents($file,json_encode($datas,JSON_PRETTY_PRINT));
     }
+
     /**
      * Retrieves some information about a project for all refs
      * @param array $project
@@ -253,77 +320,16 @@ class RegistryBuilder
 
     public function getProjectFromPackageName($packageName)
     {
-        $confs = $this->confs;
-        $client = $this->getClient();
+        $packageName = $_GET['p'];
+        $projectId = $this->getProjectIdFromPackageName($packageName);
+        $client = $this->getUserClient();
+        $repositories = $client->repositories;
+        $c = $repositories->getFile($projectId, 'composer.json', $ref);
 
-        $groups = $client->api('groups');
-        /**
-         * @var $projects Projects
-         */
-        $projects = $client->api('projects');
-        $this->projects = $projects;
-        $this->repos = $repos = $client->api('repositories');
 
-        // Load projects
-        $all_projects = array();
-        $mtime = 0;
-        if (!empty($confs['groups'])) {
-            // We have to get projects from specifics groups
-            foreach ($groups->all(array('page' => 1, 'per_page' => 100)) as $group) {
-                if (!in_array($group['name'], $confs['groups'], true)) {
-                    continue;
-                }
-                for ($page = 1; count($p = $groups->projects($group['id'], array('page' => $page, 'per_page' => 100))); $page++) {
-                    foreach ($p as $project) {
-                        $all_projects[] = $project;
-                        $mtime = max($mtime, strtotime($project['last_activity_at']));
-                    }
-                }
-            }
-        } else {
-            // We have to get all accessible projects
-            for ($page = 1; count($p = $projects->all(array('page' => $page, 'per_page' => 100))); $page++) {
-                foreach ($p as $project) {
-                    $all_projects[] = $project;
-                    $mtime = max($mtime, strtotime($project['last_activity_at']));
-                }
-            }
-        }
 
-        $me = $this->getClient()->users()->me();
-        $this->packages_file = $packages_file = $this->packages_filebase . $this->confs['api_key'] . 'json';
-        // Regenerate packages_file is need
-        //if (!file_exists($packages_file) || filemtime($packages_file) < $mtime) {
-            $packages = array();
-            foreach ($all_projects as $project) {
-                if (($package = $this->load_data($project)) && ($package_name = $this->get_package_name($project))) {
-                    $packages[$package_name] = $package;
-                }
-            }
-            if (file_exists($this->static_file)) {
-                $static_packages = json_decode(file_get_contents($this->static_file));
-                foreach ($static_packages as $name => $package) {
-                    foreach ($package as $version => $root) {
-                        if (isset($root->extra)) {
-                            $source = '_source';
-                            while (isset($root->extra->{$source})) {
-                                $source = '_' . $source;
-                            }
-                            $root->extra->{$source} = 'static';
-                        } else {
-                            $root->extra = array(
-                                '_source' => 'static',
-                            );
-                        }
-                    }
-                    $packages[$name] = $package;
-                }
-            }
-            $data = json_encode(array(
-                'packages' => array_filter($packages),
-            ), JSON_PRETTY_PRINT);
 
-            file_put_contents($packages_file, $data);
+
     }
 
 

@@ -1,5 +1,3 @@
 {
-  "packages": {
-    "providers-lazy-url": "/packages.php?p=%package%"
-  }
+    "providers-lazy-url": "/package.php?p=%package%"
 }

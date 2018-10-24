@@ -29,8 +29,12 @@ class Config
         }
         $confs['allow_package_name_mismatch'] = !empty($confs['allow_package_name_mismatch']);
 
+        $_SERVER['HTTP_HOST'] = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
+        $_SERVER['REQUEST_URI'] = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        $host = $_SERVER['HTTP_HOST'];
+        $uri = $_SERVER['REQUEST_URI'];
         $confs['base_url'] = isset( $confs['base_url']) ? $confs['base_url'] : str_replace('packages.json', '',
-            "https://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]");
+            "https://$host$uri");
 
         $confs['webhook_url'] = $confs['base_url'] . 'webhook.php';
 
