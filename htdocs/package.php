@@ -7,7 +7,7 @@ try {
     $a = new Auth();
     $a->setConfig($confs);
     $a->auth();
-    $Cr = new RegistryBuilder();
+    $Cr = new PackageService();
     $Cr->setUserClient($a->getClient());
     $Cr->setConfig($confs);
     $Cr->outputFile();

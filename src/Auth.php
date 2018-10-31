@@ -53,7 +53,6 @@ class Auth
         }
 
         $this->token = $token;
-        $this->confs['api_key'] = $token;
         $client = $this->getClient();
         try {
             $userApi = $client->users();
@@ -127,8 +126,3 @@ class Auth
 
 
 }
-//
-//{"REDIRECT_STATUS":"200","HTTP_HOST":"127.0.0.1","HTTP_ACCEPT_ENCODING":"gzip","HTTP_CONNECTION":"close","HTTP_USER_AGENT":"Composer\/1.7.2 (Linux; 4.15.0-33-generic; PHP 7.0.30)","PATH":"\/usr\/local\/sbin:\/usr\/local\/bin:\/usr\/sbin:\/usr\/bin:\/sbin:\/bin","SERVER_SIGNATURE":"<address>Apache\/2.4.18 (Ubuntu) Server at 127.0.0.1 Port 80<\/address>\n","SERVER_SOFTWARE":"Apache\/2.4.18 (Ubuntu)","SERVER_NAME":"127.0.0.1","SERVER_ADDR":"127.0.0.1","SERVER_PORT":"80","REMOTE_ADDR":"127.0.0.1","DOCUMENT_ROOT":"\/home\/keywan\/git\/gitlab-composer\/htdocs","REQUEST_SCHEME":"http","CONTEXT_PREFIX":"","CONTEXT_DOCUMENT_ROOT":"\/home\/keywan\/git\/gitlab-composer\/htdocs","SERVER_ADMIN":"webmaster@localhost","SCRIPT_FILENAME":"\/home\/keywan\/git\/gitlab-composer\/htdocs\/packages.php","REMOTE_PORT":"45218","REDIRECT_URL":"\/packages.json","GATEWAY_INTERFACE":"CGI\/1.1","SERVER_PROTOCOL":"HTTP\/1.1","REQUEST_METHOD":"GET","QUERY_STRING":"","REQUEST_URI":"\/packages.json","SCRIPT_NAME":"\/packages.php","PHP_SELF":"\/packages.php","REQUEST_TIME_FLOAT":1535747988.557,"REQUEST_TIME":1535747988}
-//==> /var/log/apache2/access.log <==
-//127.0.0.1 - - [31/Aug/2018:22:39:48 +0200] "GET /packages.json HTTP/1.1" 401 219 "-" "Composer/1.7.2 (Linux; 4.15.0-33-generic; PHP 7.0.30)"
-

@@ -5,29 +5,36 @@ namespace GitlabComposer;
 use Gitlab\Api\Projects;
 use Gitlab\Client;
 use Gitlab\Exception\RuntimeException;
+use Gitlab\Model\Project;
 
 
 class RegistryBuilder
 {
-
-    protected $packages_filebase = __DIR__ . '/../cache/packages';
     protected $packages_file = __DIR__ . '/../cache/packages.json';
     protected $static_file = __DIR__ . '/../confs/static-repos.json';
 
     protected $confs;
     protected $client;
-    protected $userClient;
 
+    public function getPackageList() {
+        $packages_file = $this->packages_file;
+        // Regenerate packages_file is need
+        if (!file_exists($packages_file) || filemtime($packages_file) + (1000*60) < time()) {
+            $this->build();
+        }
+        $packageList = json_decode(file_get_contents($this->packages_file), true);
+        return $packageList;
+    }
 
     public function build() {
         $confs = $this->confs;
         $client = $this->getClient();
 
-        $groups = $client->api('groups');
+        $groups = $client->groups;
         /**
          * @var $projects Projects
          */
-        $projects = $client->api('projects');
+        $projects = $client->projects;
         $this->projects = $projects;
         $this->repos = $repos = $client->api('repositories');
 
@@ -58,40 +65,53 @@ class RegistryBuilder
         }
 
         $me = $this->getClient()->users()->me();
-        $this->packages_file = $packages_file = $this->packages_filebase . $this->confs['api_key'] . 'json';
+        $packages_file = $this->packages_file;
         // Regenerate packages_file is need
-        //if (!file_exists($packages_file) || filemtime($packages_file) < $mtime) {
-        $packages = array();
-        foreach ($all_projects as $project) {
-            if (($package = $this->load_data($project)) && ($package_name = $this->get_package_name($project))) {
-                $packages[$package_name] = $package;
-            }
-        }
-        if (file_exists($this->static_file)) {
-            $static_packages = json_decode(file_get_contents($this->static_file));
-            foreach ($static_packages as $name => $package) {
-                foreach ($package as $version => $root) {
-                    if (isset($root->extra)) {
-                        $source = '_source';
-                        while (isset($root->extra->{$source})) {
-                            $source = '_' . $source;
-                        }
-                        $root->extra->{$source} = 'static';
-                    } else {
-                        $root->extra = array(
-                            '_source' => 'static',
-                        );
-                    }
+        if (!file_exists($packages_file) || filemtime($packages_file) < $mtime) {
+            $packages = array();
+            $projects = [];
+            foreach ($all_projects as $project) {
+                if (($package = $this->load_data($project)) && ($package_name = $this->get_package_name($project))) {
+                    $packages[$package_name] = $package;
+                    $projects[$package_name] = [
+                        'path_with_namespace' => $project['path_with_namespace'],
+                        'name' => $project['name'],
+                        'id' => $project['id'] ];
                 }
-                $packages[$name] = $package;
+            }
+            if (file_exists($this->static_file)) {
+                $static_packages = json_decode(file_get_contents($this->static_file));
+                foreach ($static_packages as $name => $package) {
+                    foreach ($package as $version => $root) {
+                        if (isset($root->extra)) {
+                            $source = '_source';
+                            while (isset($root->extra->{$source})) {
+                                $source = '_' . $source;
+                            }
+                            $root->extra->{$source} = 'static';
+                        } else {
+                            $root->extra = array(
+                                '_source' => 'static',
+                            );
+                        }
+                    }
+                    $packages[$name] = $package;
+                }
+            }
+            /*$data = json_encode(array(
+                'packages' => array_filter($packages),
+            ), JSON_PRETTY_PRINT);
+
+            file_put_contents($packages_file, $data);
+            */
+            $data = json_encode($projects,
+             JSON_PRETTY_PRINT);
+
+            $res = file_put_contents($packages_file , $data);
+            if (! $res) {
+                throw new \Exception("I can not write $packages_file");
             }
         }
-        $data = json_encode(array(
-            'packages' => array_filter($packages),
-        ), JSON_PRETTY_PRINT);
-
-        file_put_contents($packages_file, $data);
-
 
     }
 
@@ -99,28 +119,6 @@ class RegistryBuilder
     public function setConfig($confs){
         $this->confs = $confs;
     }
-
-    /**
-     * Output a json file, sending max-age header
-     */
-    function outputFile()
-    {
-        //$this->build();
-        $file = $this->packages_file;
-        $mtime = filemtime($file);
-
-        header('Content-Type: application/json');
-        header('Last-Modified: ' . gmdate('r', $mtime));
-        header('Cache-Control: max-age=0');
-
-        if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) && ($since = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE'])) && $since >= $mtime) {
-            header('HTTP/1.0 304 Not Modified');
-        } else {
-            readfile($file);
-        }
-
-    }
-
 
 
     /**
@@ -164,7 +162,7 @@ class RegistryBuilder
 
         static $ref_cache = [];
 
-        $ref_key = md5(serialize($project) . serialize($ref));
+        $ref_key = hash('sha384',(serialize($project) . serialize($ref)));
 
         if (!isset($ref_cache[$ref_key])) {
             if (preg_match('/^v?\d+\.\d+(\.\d+)*(\-(dev|patch|alpha|beta|RC)\d*)?$/', $ref['name'])) {
@@ -173,12 +171,21 @@ class RegistryBuilder
                 $version = 'dev-' . $ref['name'];
             }
             if (($data = $this->fetch_composer($project, $ref['commit']['id'])) !== false) {
+                $data['uid'] = $ref_key;
                 $data['version'] = $version;
                 $data['source'] = [
                     'url' => $project[method . '_url_to_repo'],
                     'type' => 'git',
                     'reference' => $ref['commit']['id'],
                 ];
+                $data['dist'] = [
+                    'url' => $project['web_url'].'/-/archive/'.$ref['name'].'/'.$project['name'].'-'.$ref['name'].'.zip',
+                    'type' => 'zip',
+                    'reference' => $ref['commit']['id'],
+                ];
+                //https://psgit.oxid-esales.com/modules/product-badges/-/archive/master/product-badges-master.zip
+                //https://gitlab.com/gitlab-org/gitlab-ce/-/archive/master/gitlab-ce-master.zip
+
 
                 $ref_cache[$ref_key] = [$version => $data];
             } else {
@@ -317,22 +324,6 @@ class RegistryBuilder
     }
 
 
-
-    public function getProjectFromPackageName($packageName)
-    {
-        $packageName = $_GET['p'];
-        $projectId = $this->getProjectIdFromPackageName($packageName);
-        $client = $this->getUserClient();
-        $repositories = $client->repositories;
-        $c = $repositories->getFile($projectId, 'composer.json', $ref);
-
-
-
-
-
-    }
-
-
     /**
      * @param $confs
      * @return Client
@@ -351,19 +342,6 @@ class RegistryBuilder
 
     public function setClient($client){
         $this->client = $client;
-    }
-
-    /**
-     * @param $confs
-     * @return Client
-     */
-    public function getUserClient()
-    {
-        return $this->userClient;
-    }
-
-    public function setUserClient($client){
-        $this->userClient = $client;
     }
 
 }
