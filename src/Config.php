@@ -40,8 +40,6 @@ class Config
 
         $confs['webhook_token'] = isset($confs['webhook_token']) ? $confs['webhook_token'] : false;
         $confs['create_webhook'] = !empty($confs['create_webhook']);
-
-        $confs['allowed_client_ips'] = isset($this->confs['allowed_client_ips']) ? $this->confs['allowed_client_ips'] : false;
         $confs['allowed_webhook_ips'] = isset($this->confs['allowed_webhook_ips']) ? $this->confs['allowed_webhook_ips'] : false;
 
         $this->confs = $confs;
