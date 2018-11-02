@@ -1,9 +1,9 @@
-# Gitlab Composer repository
+# Gitlab Composer Repository
 
 Small script that loops through all branches and tags of all projects in a Gitlab installation
 and if it contains a `composer.json`, adds it to an index.
 
-This is very similar to the behaviour of Packagist.org
+This is very similar to the behaviour of Packagist.org / packagist.com
 
 See [example](examples/packages.json).
 
@@ -29,7 +29,6 @@ Then, to use your repository, add this in the `composer.json` of your project:
         }
     ],
     "config": {
-        "secure-http": false,
         "gitlab-domains" : [
             "yourgitlab.yourcompany.com",
             "yourgitlabrepository.yourcompany.com"
@@ -38,8 +37,32 @@ Then, to use your repository, add this in the `composer.json` of your project:
 }
 ```
 
-## Caveats
+### Local Development
+In case you like to develop on this software and run the service locally you may want to add 
+"secure-http": false and 127.0.0.1 in the gitlab-domain section. E.g:
+```json
+{
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "http://yourgitlabrepository.yourcompany.com/"
+        }
+    ],
+    "config": {
+        "secure-http": false,
+        "gitlab-domains" : [
+            "yourgitlab.yourcompany.com",
+            "127.0.0.1"
+        ]
+    },
+}
+```
 
+
+
+## Caveats
+ * there is no frontend other then gitlab itself to manage users
+ * 
 
 
 ## Author
