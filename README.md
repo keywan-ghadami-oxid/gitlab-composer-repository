@@ -13,17 +13,11 @@ See [example](examples/packages.json).
  2. Copy `confs/samples/gitlab.ini` into `confs/gitlab.ini`, following instructions in comments
  3. Ensure cache is writable
  4. Change the TTL as desired (default is 60 seconds)
- 5. Ensure an alias exists for /packages.json => /packages.php (.htaccess is provided)
-
+ 
 ## Usage
 
 Simply include a composer.json in your project, all branches and tags respecting 
 the [formats for versions](http://getcomposer.org/doc/04-schema.md#version) will be detected.
-
-By default, the package `name` must be equal to the path of the project. i.e.: `my-group/my-project`.
-This is not a design requirement, it is mostly to prevent common errors when you copy a `composer.json`
-from another project without changing its name. To enable support for differences between package names and project
-paths, set `allow_package_name_mismatch` to `true` in `confs/gitlab.ini`.
 
 Then, to use your repository, add this in the `composer.json` of your project:
 ```json
@@ -31,18 +25,25 @@ Then, to use your repository, add this in the `composer.json` of your project:
     "repositories": [
         {
             "type": "composer",
-            "url": "http://gitlab-composer.stage.wemakecustom.com/"
+            "url": "http://yourgitlabrepository.yourcompany.com/"
         }
-    ]
+    ],
+    "config": {
+        "secure-http": false,
+        "gitlab-domains" : [
+            "yourgitlab.yourcompany.com",
+            "yourgitlabrepository.yourcompany.com"
+        ]
+    },
 }
 ```
 
 ## Caveats
 
-While your projects will be protected through SSH, they will be publicly listed.
-If you require protection of the package list, [I suggest this reading](https://github.com/composer/composer/blob/master/doc/articles/handling-private-packages-with-satis.md).
+
 
 ## Author
+ * [Keywan Ghadami]
  * [Sébastien Lavoie](http://blog.lavoie.sl/2013/08/composer-repository-for-gitlab-projects.html)
  * [WeMakeCustom](http://www.wemakecustom.com)
 
