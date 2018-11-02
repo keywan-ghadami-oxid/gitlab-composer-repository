@@ -24,25 +24,6 @@ class Auth
         exit('X-GITLAB-TOKEN Header missing or not valid');
     }
 
-    public function getAllowedIps() {
-        return $this->confs['allowed_client_ips'];
-    }
-
-    protected function authByIp() {
-        $ips = $this->getAllowedIps();
-        if ($ips) {
-            if (!isset($_SERVER['REMOTE_ADDR'])){
-                return true;
-            }
-            $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
-            if (in_array($REMOTE_ADDR, $ips)) {
-                return true;
-            }
-            return false;
-        }
-        return true;
-    }
-
     public function auth()
     {
         $confs = $this->confs;
