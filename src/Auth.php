@@ -60,8 +60,8 @@ class Auth
         return $client;
     }
 
-    public function setConfig(&$confs){
-        $this->confs = &$confs;
+    public function setConfig($confs){
+        $this->confs = $confs;
     }
 
 
