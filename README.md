@@ -41,6 +41,16 @@ Then, to use your repository, add this in the `composer.json` of your project:
     },
 }
 ```
+now you require every package that is hosted on the gitlab server.
+
+### Authentication
+On the first usage of composer it will ask for you credentials. 
+With that composer will require a outh token that will be stored in your auth.json for all following requests.
+In case you have activated two-factor login in your gitlab account, you have to create a gitlab token and store it in you auth.json manually.
+
+### Adding new Package Version
+The Gitlab Composer Repository takes care for adding webhooks to be informed about new tags, so adding a new version will automatically and immediately be reflected. Deleting a tag and by that a package versions requires a cache clear.
+
 
 ### Local Development
 In case you like to develop on this software and run the service locally you may want to add 
@@ -65,9 +75,8 @@ In case you like to develop on this software and run the service locally you may
 
 
 
-## Caveats
- * there is no frontend other then gitlab itself to manage users
- * 
+## Caveats (missing features and known bugs)
+ * there is no frontend other then gitlab itself to manage users (if have to manage customers you may need to connect your CRM to gitlab) If you face this issue, detailed feature request are welcome.
 
 
 ## Author
