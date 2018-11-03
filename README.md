@@ -7,6 +7,11 @@ This is very similar to the behaviour of Packagist.org / packagist.com
 
 See [example](examples/packages.json).
 
+## Requirement
+ * Php
+ * Apache Web Server
+ * Gitlab (can be hosted on a different domain)
+ 
 ## Installation
 
  1. Run `composer.phar install`
