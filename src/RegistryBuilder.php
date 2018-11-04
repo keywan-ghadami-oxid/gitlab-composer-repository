@@ -249,11 +249,10 @@ class RegistryBuilder
      * Determine the name to use for the package.
      *
      * @param array $project
-     * @return string The name of the project
+     * @return array the composerdata
      */
     function isComposerPackage($project) {
         $composerData = $this->getDefaultBranch($project);
-
 
         return $this->get_package_name($composerData);
     }
@@ -261,8 +260,8 @@ class RegistryBuilder
     /**
      * Determine the name to use for the package.
      *
-     * @param array $project
-     * @return string The name of the project
+     * @param array $composerData
+     * @return string|bool The name of the project
      */
     function get_package_name($composerData) {
         $data = reset($composerData);
@@ -330,25 +329,32 @@ class RegistryBuilder
         $all_projects = array();
         if (!empty($confs['groups'])) {
             $groups = $client->groups;
-
+            $groupsIterator = new Iterator($groups,'all');
             // We have to get projects from specifics groups
-            foreach ($groups->all(array('page' => 1, 'per_page' => 100)) as $group) {
+            foreach ($groupsIterator as $group) {
                 if (!in_array($group['name'], $confs['groups'], true)) {
                     continue;
                 }
-                for ($page = 1; count($p = $groups->projects($group['id'], array('page' => $page, 'per_page' => 100))); $page++) {
-                    foreach ($p as $project) {
-                        $all_projects[] = $project;
-                    }
-                }
+                $projectsIterator = new Iterator($groups, 'projects', $group['id']);
+                $all_projects = $this->fetchProjects($projectsIterator, $all_projects);
             }
         } else {
             // We have to get all accessible projects
-            for ($page = 1; count($p = $projects->all(array('page' => $page, 'per_page' => 100))); $page++) {
-                foreach ($p as $project) {
-                    $all_projects[] = $project;
-                }
-            }
+            $projectsIterator = new Iterator($projects,'all');
+            $all_projects = $this->fetchProjects($projectsIterator, $all_projects);
+        }
+        return $all_projects;
+    }
+
+    /**
+     * @param $projectsIterator
+     * @param $all_projects
+     * @return array
+     */
+    protected function fetchProjects($projectsIterator, $all_projects)
+    {
+        foreach ($projectsIterator as $project) {
+            $all_projects[] = $project;
         }
         return $all_projects;
     }
