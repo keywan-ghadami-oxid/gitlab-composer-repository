@@ -19,6 +19,15 @@ See [example](examples/packages.json).
  3. Ensure cache is writable
  4. Change the TTL as desired (default is 60 seconds)
  
+https://www.codefactor.io/repository/github/signalr/signalr/badge?style=plastic
+
+## Quality 
+* You are reading the documentation
+* messurement is never perfect but important to improve
+[![CodeFactor](https://www.codefactor.io/repository/github/keywan-ghadami-oxid/gitlab-composer-repository/badge)](https://www.codefactor.io/repository/github/keywan-ghadami-oxid/gitlab-composer-repository)
+* efficiency by using longliving caches (for happy users and our environment)
+* security (how to proove? audits and ideas welcome)
+ 
 ## Usage
 
 Simply include a composer.json in your project, all branches and tags respecting 
