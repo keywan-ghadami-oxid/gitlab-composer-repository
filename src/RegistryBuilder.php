@@ -27,90 +27,27 @@ class RegistryBuilder
     }
 
     public function build() {
-        $confs = $this->confs;
-        $client = $this->getClient();
+        $packages_file = $this->packages_file;
 
-        $groups = $client->groups;
-        /**
-         * @var $projects Projects
-         */
-        $projects = $client->projects;
-        $this->projects = $projects;
-        $this->repos = $repos = $client->api('repositories');
-
-        // Load projects
-        $all_projects = array();
-        $mtime = 0;
-        if (!empty($confs['groups'])) {
-            // We have to get projects from specifics groups
-            foreach ($groups->all(array('page' => 1, 'per_page' => 100)) as $group) {
-                if (!in_array($group['name'], $confs['groups'], true)) {
-                    continue;
-                }
-                for ($page = 1; count($p = $groups->projects($group['id'], array('page' => $page, 'per_page' => 100))); $page++) {
-                    foreach ($p as $project) {
-                        $all_projects[] = $project;
-                        $mtime = max($mtime, strtotime($project['last_activity_at']));
-                    }
-                }
-            }
-        } else {
-            // We have to get all accessible projects
-            for ($page = 1; count($p = $projects->all(array('page' => $page, 'per_page' => 100))); $page++) {
-                foreach ($p as $project) {
-                    $all_projects[] = $project;
-                    $mtime = max($mtime, strtotime($project['last_activity_at']));
-                }
+        $all_projects = $this->loadAllProjects();
+        $projects = [];
+        foreach ($all_projects as $project) {
+            $package = $this->load_data($project);
+            if ($package) {
+                $package_name = $this->get_package_name($package);
+                $projects[$package_name] = [
+                    'path_with_namespace' => $project['path_with_namespace'],
+                    'name' => $project['name'],
+                    'id' => $project['id'] ];
             }
         }
 
-        $me = $this->getClient()->users()->me();
-        $packages_file = $this->packages_file;
-        // Regenerate packages_file is need
-        if (!file_exists($packages_file) || filemtime($packages_file) < $mtime) {
-            $packages = array();
-            $projects = [];
-            foreach ($all_projects as $project) {
-                if (($package = $this->load_data($project)) && ($package_name = $this->get_package_name($project))) {
-                    $packages[$package_name] = $package;
-                    $projects[$package_name] = [
-                        'path_with_namespace' => $project['path_with_namespace'],
-                        'name' => $project['name'],
-                        'id' => $project['id'] ];
-                }
-            }
-            if (file_exists($this->static_file)) {
-                $static_packages = json_decode(file_get_contents($this->static_file));
-                foreach ($static_packages as $name => $package) {
-                    foreach ($package as $version => $root) {
-                        if (isset($root->extra)) {
-                            $source = '_source';
-                            while (isset($root->extra->{$source})) {
-                                $source = '_' . $source;
-                            }
-                            $root->extra->{$source} = 'static';
-                        } else {
-                            $root->extra = array(
-                                '_source' => 'static',
-                            );
-                        }
-                    }
-                    $packages[$name] = $package;
-                }
-            }
-            /*$data = json_encode(array(
-                'packages' => array_filter($packages),
-            ), JSON_PRETTY_PRINT);
+        $data = json_encode($projects,
+         JSON_PRETTY_PRINT);
 
-            file_put_contents($packages_file, $data);
-            */
-            $data = json_encode($projects,
-             JSON_PRETTY_PRINT);
-
-            $res = file_put_contents($packages_file , $data);
-            if (! $res) {
-                throw new \Exception("I can not write $packages_file");
-            }
+        $res = file_put_contents($packages_file , $data);
+        if (! $res) {
+            throw new \Exception("I can not write $packages_file");
         }
 
     }
@@ -130,7 +67,7 @@ class RegistryBuilder
      */
     public function fetch_composer($project, $ref) {
         $repos = $this->repos;
-        $allow_package_name_mismatches = $this->confs['allow_package_name_mismatch'];
+
         try {
             $c = $repos->getFile($project['id'], 'composer.json', $ref);
 
@@ -140,7 +77,7 @@ class RegistryBuilder
 
             $composer = json_decode(base64_decode($c['content']), true);
 
-            if (empty($composer['name']) || (!$allow_package_name_mismatches && strcasecmp($composer['name'], $project['path_with_namespace']) !== 0)) {
+            if (empty($composer['name'])) {
                 return false; // packages must have a name and must match
             }
 
@@ -183,9 +120,6 @@ class RegistryBuilder
                     'type' => 'zip',
                     'reference' => $ref['commit']['id'],
                 ];
-                //https://psgit.oxid-esales.com/modules/product-badges/-/archive/master/product-badges-master.zip
-                //https://gitlab.com/gitlab-org/gitlab-ce/-/archive/master/gitlab-ce-master.zip
-
 
                 $ref_cache[$ref_key] = [$version => $data];
             } else {
@@ -268,42 +202,46 @@ class RegistryBuilder
 
         if (file_exists($file) && filemtime($file) >= $mtime) {
             if (filesize($file) > 0) {
-                return json_decode(file_get_contents($file));
+                return json_decode(file_get_contents($file),true);
             } else {
                 return false;
             }
-        } elseif ($data = $this->fetch_refs($project)) {
+        } else {
+            $isComposer = $this->isComposerPackage($project);
+            $data = $isComposer ? $this->fetch_refs($project) : false;
             if ($data) {
-                if ($this->confs['create_webhook']) {
-                    $webhook_url = $this->confs['webhook_url'];
-                    $id = $project['id'];
-                    $allHooks = $this->projects->hooks($id);
-                    $hookExists = false;
-                    foreach ($allHooks as $hook) {
-                        if ($hook['url'] == $webhook_url) {
-                            $hookExists = true;
-                            break;
+                if ($data) {
+                    if ($this->confs['create_webhook']) {
+                        $webhook_url = $this->confs['webhook_url'];
+                        $id = $project['id'];
+                        $allHooks = $this->projects->hooks($id);
+                        $hookExists = false;
+                        foreach ($allHooks as $hook) {
+                            if ($hook['url'] == $webhook_url) {
+                                $hookExists = true;
+                                break;
+                            }
                         }
-                    }
-                    if (!$hookExists) {
-                        $arguments['tag_push_events'] = true;
-                        if ($this->confs['webhook_token']) {
-                            $arguments['token'] = $this->confs['webhook_token'];
+                        if (!$hookExists) {
+                            $arguments['tag_push_events'] = true;
+                            if ($this->confs['webhook_token']) {
+                                $arguments['token'] = $this->confs['webhook_token'];
+                            }
+                            $this->projects->addHook($id, $webhook_url, $arguments);
                         }
-                        $this->projects->addHook($id, $webhook_url, $arguments);
                     }
                 }
+                file_put_contents($file, json_encode($data,JSON_PRETTY_PRINT));
+                touch($file, $mtime);
+
+                return $data;
+            } else {
+                $f = fopen($file, 'w');
+                fclose($f);
+                touch($file, $mtime);
+
+                return false;
             }
-            file_put_contents($file, json_encode($data,JSON_PRETTY_PRINT));
-            touch($file, $mtime);
-
-            return $data;
-        } else {
-            $f = fopen($file, 'w');
-            fclose($f);
-            touch($file, $mtime);
-
-            return false;
         }
     }
 
@@ -313,14 +251,26 @@ class RegistryBuilder
      * @param array $project
      * @return string The name of the project
      */
-    function get_package_name($project) {
-        $allow_package_name_mismatches = $this->confs['allow_package_name_mismatch'];
-        if ($allow_package_name_mismatches) {
-            $ref = $this->fetch_ref($project, $this->repos->branch($project['id'], $project['default_branch']));
-            return reset($ref)['name'];
+    function isComposerPackage($project) {
+        $composerData = $this->getDefaultBranch($project);
+
+
+        return $this->get_package_name($composerData);
+    }
+
+    /**
+     * Determine the name to use for the package.
+     *
+     * @param array $project
+     * @return string The name of the project
+     */
+    function get_package_name($composerData) {
+        $data = reset($composerData);
+        if (!isset($data['name'])) {
+            return false;
         }
 
-        return $project['path_with_namespace'];
+        return $data['name'];
     }
 
 
@@ -342,6 +292,65 @@ class RegistryBuilder
 
     public function setClient($client){
         $this->client = $client;
+    }
+
+    /**
+     * @param $project
+     * @return mixed
+     */
+    public function getDefaultBranch($project)
+    {
+        $ref = $this->fetch_ref($project, $this->repos->branch($project['id'], $project['default_branch']));
+
+        return $ref;
+    }
+
+    /**
+     * @param $confs
+     * @param $groups
+     * @param $projects
+     * @return array
+     */
+    protected function loadAllProjects()
+    {
+
+        $confs = $this->confs;
+
+        $client = $this->getClient();
+
+        $this->repos = $repos = $client->api('repositories');
+
+
+        /**
+         * @var $projects Projects
+         */
+        $projects = $client->projects;
+        $this->projects = $projects;
+
+        $all_projects = array();
+        if (!empty($confs['groups'])) {
+            $groups = $client->groups;
+
+            // We have to get projects from specifics groups
+            foreach ($groups->all(array('page' => 1, 'per_page' => 100)) as $group) {
+                if (!in_array($group['name'], $confs['groups'], true)) {
+                    continue;
+                }
+                for ($page = 1; count($p = $groups->projects($group['id'], array('page' => $page, 'per_page' => 100))); $page++) {
+                    foreach ($p as $project) {
+                        $all_projects[] = $project;
+                    }
+                }
+            }
+        } else {
+            // We have to get all accessible projects
+            for ($page = 1; count($p = $projects->all(array('page' => $page, 'per_page' => 100))); $page++) {
+                foreach ($p as $project) {
+                    $all_projects[] = $project;
+                }
+            }
+        }
+        return $all_projects;
     }
 
 }
