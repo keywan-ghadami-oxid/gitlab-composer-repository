@@ -63,6 +63,11 @@ You can use the following command template by replacing
 ```
 composer config -g gitlab-oauth.[composer-repository.yourcompany.com] [yourtoken]
 ```
+#### CI
+If your CI needs access to the repository you add inject an environment varible for composer
+```
+COMPOSER_AUTH='{"gitlab-oauth": {"[composer-repository.yourcompany.com]": "[citoken]"}}'
+```
 
 ### Adding new Package Version
 The Gitlab Composer Repository takes care for adding webhooks to be informed about new tags, so adding a new version will automatically and immediately be reflected. Deleting a tag and by that a package versions requires a cache clear.
