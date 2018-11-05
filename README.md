@@ -5,7 +5,7 @@ and if it contains a `composer.json`, adds it to an index.
 
 This is very similar to the behaviour of Packagist.org / packagist.com
 
-See [example](examples/packages.json).
+
 
 ## Requirement
  * Php
