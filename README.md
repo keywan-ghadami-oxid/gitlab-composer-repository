@@ -24,6 +24,7 @@ https://www.codefactor.io/repository/github/signalr/signalr/badge?style=plastic
 ## Quality 
 * You are reading the documentation
 * messurement is never perfect but important to improve
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/4c3f8944eb064dc99a15715dde4e55c1)](https://app.codacy.com/app/keywan.ghadami/gitlab-composer-repository?utm_source=github.com&utm_medium=referral&utm_content=keywan-ghadami-oxid/gitlab-composer-repository&utm_campaign=Badge_Grade_Settings)
 [![CodeFactor](https://www.codefactor.io/repository/github/keywan-ghadami-oxid/gitlab-composer-repository/badge)](https://www.codefactor.io/repository/github/keywan-ghadami-oxid/gitlab-composer-repository)
 * efficiency by using longliving caches (for happy users and our environment)
 * security (how to proove? audits and ideas welcome)
