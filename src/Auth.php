@@ -17,11 +17,13 @@ class Auth
 
     public function send_401()
     {
-        header("need gitlab token", true, 401);
-        $e = fopen('php://stderr', 'w');
+        header("HTTP/1.0 401 UNAUTHORIZED", true, 401);
+/*        $e = fopen('php://stderr', 'w');
         fwrite($e, "hello, world!" . PHP_EOL);
         fwrite($e, json_encode($_SERVER));
-        exit('X-GITLAB-TOKEN Header missing or not valid');
+*/
+        //print ('Header missing: X-GITLAB-TOKEN missing or not valid');
+        exit();
     }
 
     public function auth()
