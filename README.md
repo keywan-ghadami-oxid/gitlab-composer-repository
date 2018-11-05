@@ -57,6 +57,13 @@ On the first usage of composer it will ask for you credentials.
 With that composer will require a outh token that will be stored in your auth.json for all following requests.
 In case you have activated two-factor login in your gitlab account, you have to create a gitlab token and store it in you auth.json manually.
 
+You can use the following command template by replacing 
+- [composer-repository.yourcompany.com] with the domain for your repository (this software running on a domain)
+- [yourtoken] with the token generated within gitlab
+```
+composer config -g gitlab-oauth.[composer-repository.yourcompany.com] [yourtoken]
+```
+
 ### Adding new Package Version
 The Gitlab Composer Repository takes care for adding webhooks to be informed about new tags, so adding a new version will automatically and immediately be reflected. Deleting a tag and by that a package versions requires a cache clear.
 
