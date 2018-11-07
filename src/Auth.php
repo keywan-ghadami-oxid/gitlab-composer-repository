@@ -72,7 +72,7 @@ class Auth
      * copy right Ngô Văn Thao
      * https://stackoverflow.com/questions/40582161/how-to-properly-use-bearer-tokens
      * */
-    function getAuthorizationHeader(){
+    public function getAuthorizationHeader(){
         $headers = null;
         if (isset($_SERVER['Authorization'])) {
             $headers = trim($_SERVER["Authorization"]);
@@ -96,7 +96,7 @@ class Auth
      * copy right Ngô Văn Thao
      * https://stackoverflow.com/questions/40582161/how-to-properly-use-bearer-tokens
      * */
-    function getBearerToken() {
+    public function getBearerToken() {
         $headers = $this->getAuthorizationHeader();
         // HEADER: Get the access token from the header
         if (!empty($headers)) {

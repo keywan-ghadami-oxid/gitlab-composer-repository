@@ -116,7 +116,7 @@ class RegistryBuilder
                     'reference' => $ref['commit']['id'],
                 ];
                 $data['dist'] = [
-                    'url' => $project['web_url'].'/-/archive/'.$ref['name'].'/'.$project['name'].'-'.$ref['name'].'.zip',
+                    'url' => $this->confs['base_url'] .'dist.php?u='. urlencode($project['path_with_namespace'].'/-/archive/'.$ref['name'].'/'.$project['name'].'-'.$ref['name'].'.zip'),
                     'type' => 'zip',
                     'reference' => $ref['commit']['id'],
                 ];

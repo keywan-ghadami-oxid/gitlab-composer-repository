@@ -37,6 +37,10 @@ class Config
             "https://$host$uri");
 
         $confs['webhook_url'] = $confs['base_url'] . 'webhook.php';
+        if (! isset($confs['gitlab_url'])){
+            die("missing gitlab url configuration");
+        }
+        $confs['endpoint'] = isset( $confs['endpoint']) ? $confs['endpoint'] : $confs['gitlab_url'] . 'api/v4/';
 
         $confs['webhook_token'] = isset($confs['webhook_token']) ? $confs['webhook_token'] : false;
         $confs['create_webhook'] = !empty($confs['create_webhook']);
