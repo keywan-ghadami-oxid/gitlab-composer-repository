@@ -12,5 +12,5 @@ try {
     $Cr->setConfig($confs);
     $Cr->outputFile();
 } catch (\Exception $ex) {
-    print $ex;
+    http_response_code(404);
 }

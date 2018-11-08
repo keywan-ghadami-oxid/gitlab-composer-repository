@@ -51,8 +51,12 @@ class PackageService
             $this->notFound();
             return;
         }
-
-        $tagList = $this->userClient->repositories()->tags($project['id']);
+        try {
+            $tagList = $this->userClient->repositories()->tags($project['id']);
+        } catch (\Gitlab\Exception\RuntimeException $ex) {
+            //for security reason do not tell the client that he is not allowed to access that module
+            $this->notFound();
+        }
         if (! $tagList){
             //for security reason do not tell the client that there is a module with that name
             $this->notFound();
