@@ -18,4 +18,9 @@ $options = array(
 );
 $context  = stream_context_create($options);
 $result = file_get_contents($tokenEndpoint, false, $context);
+if (!$result) {
+    header("HTTP/1.0 401 UNAUTHORIZED", true, 401);
+    exit();
+}
+
 print $result;
