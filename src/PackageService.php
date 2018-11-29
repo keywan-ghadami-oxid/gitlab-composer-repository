@@ -43,6 +43,11 @@ class PackageService
             return;
         }
 
+        $a = new Auth();
+        $a->setConfig($this->confs);
+        $a->auth();
+        $client = $a->getClient();
+
         $project = $packageList[$packageName];
 
 
@@ -52,7 +57,7 @@ class PackageService
             return;
         }
         try {
-            $tagList = $this->userClient->repositories()->tags($project['id']);
+            $tagList = $client->repositories()->tags($project['id']);
         } catch (\Gitlab\Exception\RuntimeException $ex) {
             //for security reason do not tell the client that he is not allowed to access that module
             $this->notFound();

@@ -15,14 +15,11 @@ class Auth
     protected $confs;
     protected $token;
 
-    public function send_401()
+    public function send_401($warning)
     {
         header("HTTP/1.0 401 UNAUTHORIZED", true, 401);
-/*        $e = fopen('php://stderr', 'w');
-        fwrite($e, "hello, world!" . PHP_EOL);
-        fwrite($e, json_encode($_SERVER));
-*/
-        //print ('Header missing: X-GITLAB-TOKEN missing or not valid');
+        header('Content-Type: application/json');
+        print json_encode(["warning"=>$warning]);
         exit();
     }
 
@@ -32,7 +29,11 @@ class Auth
 
         $token = $this->getBearerToken();
         if (!$token) {
-            $this->send_401();
+            if ($_SERVER['PHP_AUTH_USER']) {
+                $this->send_401("make sure you have configured gitlab domains" );
+            }
+            $domain = parse_url($confs['base_url'],PHP_URL_HOST);
+            $this->send_401("STOP: press CTRL-C and run first composer config gitlab-domains $domain");
         }
 
         $this->token = $token;
@@ -42,7 +43,7 @@ class Auth
             $me = $userApi->user();
         } catch (RuntimeException $ex) {
             if ($ex->getCode() == 401) {
-                $this->send_401();
+                $this->send_401("auth failed with token '$token''");
             } else {
                 header($ex->getMessage(), true, 500);
             }

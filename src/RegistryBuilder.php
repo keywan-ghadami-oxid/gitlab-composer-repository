@@ -269,7 +269,7 @@ class RegistryBuilder
             return false;
         }
 
-        return $data['name'];
+        return strtolower($data['name']);
     }
 
 

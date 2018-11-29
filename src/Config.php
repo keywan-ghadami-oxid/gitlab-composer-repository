@@ -32,9 +32,8 @@ class Config
         $_SERVER['HTTP_HOST'] = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
         $_SERVER['REQUEST_URI'] = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
         $host = $_SERVER['HTTP_HOST'];
-        $uri = $_SERVER['REQUEST_URI'];
-        $confs['base_url'] = isset( $confs['base_url']) ? $confs['base_url'] : str_replace('packages.json', '',
-            "https://$host$uri");
+        $path = dirname(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+        $confs['base_url'] = isset( $confs['base_url']) ? $confs['base_url'] : "https://$host$path";
 
         $confs['webhook_url'] = $confs['base_url'] . 'webhook.php';
         if (! isset($confs['gitlab_url'])){
