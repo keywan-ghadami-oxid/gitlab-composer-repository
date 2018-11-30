@@ -104,6 +104,10 @@ In case you like to develop on this software and run the service locally you may
 ## Caveats (missing features and known bugs)
  * there is no frontend other then gitlab itself to manage users (if have to manage customers you may need to connect your CRM to gitlab) If you face this issue, detailed feature request are welcome.
 
+## Changelog
+ * 0.03 fix: making packigename case insensitive
+ * 0.02 
+ * 0.01 initial release
 
 ## Author
  * [Keywan Ghadami]
