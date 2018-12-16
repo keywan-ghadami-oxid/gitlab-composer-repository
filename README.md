@@ -105,6 +105,9 @@ In case you like to develop on this software and run the service locally you may
  * there is no frontend other then gitlab itself to manage users (if have to manage customers you may need to connect your CRM to gitlab) If you face this issue, detailed feature request are welcome.
 
 ## Changelog
+
+ * 0.04 fix: download archives 
+ using now gitlab API instead of frontend url because that is not supported in new gitlab version 
  * 0.03 fix: making packigename case insensitive
  * 0.02 
  * 0.01 initial release
