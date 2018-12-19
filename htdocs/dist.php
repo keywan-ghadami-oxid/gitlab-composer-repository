@@ -21,10 +21,32 @@ $auth->setConfig($confs);
 $auth->auth();
 $token = $auth->getBearerToken();
 $url = $_GET['u'];
-$url = urldecode($url);
 
-$gitlaburl = $confs['gitlab_url'];
-$target = $gitlaburl . $url;
+if ($url) {
+    $parts =  explode('/-',$url);
+    $path_with_namespace = $parts[0];
+    $ref = explode('-', $parts[1]);
+    $ref = substr($ref[1],0,-4);
+    $registry = new RegistryBuilder();
+    $registry->setConfig($confs);
+    $packageList = $registry->getPackageList();
+    foreach ($packageList as $package) {
+        if ($package['path_with_namespace'] == $path_with_namespace) {
+            $id = $package['id'];
+            break;
+        }
+    }
+} else {
+    $id = $_GET['id'];
+    $ref = $_GET['ref'];
+}
+$url = 'projects/' . $id .'/repository/archive.zip?ref='. $ref;
+$target = $confs['endpoint'] . $url;
+
+
+//GET /projects/:id/repository/archive[.format]
+// /projects/281/repository/archive.zip
+//https://psgit.oxid-esales.com/api/v4/projects/281/repository/archive.zip
 
 // use key 'http' even if you send the request to https://...
 $options = array(
@@ -35,9 +57,18 @@ $options = array(
 );
 
 $context  = stream_context_create($options);
-header("Content-Type: application/zip");
 
 // stream the file
 $fp = fopen($target, 'rb', false, $context);
+
+if (isset($http_response_header)) {
+    $a_header = $http_response_header;
+    if (strpos($a_header[0],'200') === false){
+        http_response_code(500);
+        exit();
+    }
+}
+
+header("Content-Type: application/zip");
 
 fpassthru($fp);

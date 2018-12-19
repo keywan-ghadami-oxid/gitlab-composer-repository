@@ -33,7 +33,7 @@ class Config
         $_SERVER['REQUEST_URI'] = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
         $host = $_SERVER['HTTP_HOST'];
         $path = dirname(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
-        $confs['base_url'] = isset( $confs['base_url']) ? $confs['base_url'] : "https://$host$path";
+        $confs['base_url'] = isset( $confs['base_url']) ? $confs['base_url'] : $_SERVER['REQUEST_SCHEME'] . "://$host$path";
 
         $confs['webhook_url'] = $confs['base_url'] . 'webhook.php';
         if (! isset($confs['gitlab_url'])){

@@ -106,9 +106,12 @@ In case you like to develop on this software and run the service locally you may
  * there is no frontend other then gitlab itself to manage users (if have to manage customers you may need to connect your CRM to gitlab) If you face this issue, detailed feature request are welcome.
 
 ## Changelog
- * 0.04 update docu
- * 0.03 fix: making package name case insensitive
- * 0.02 ;-)
+
+ * 0.05 update docu
+ * 0.04 fix: download archives 
+ using now gitlab API instead of frontend url because that is not supported in new gitlab version 
+ * 0.03 fix: making packigename case insensitive
+ * 0.02 refactoring, remove static repository feature, proxy dist downloads,   
  * 0.01 initial release
 
 ## Author
