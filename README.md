@@ -107,12 +107,13 @@ In case you like to develop on this software and run the service locally you may
 
 ## Changelog
  * 0.04 update docu
- * 0.03 fix: making packigename case insensitive
+ * 0.03 fix: making package name case insensitive
  * 0.02 ;-)
  * 0.01 initial release
 
 ## Author
  * [Keywan Ghadami]
+ * [Tobias Merkl]
  * [Sébastien Lavoie](http://blog.lavoie.sl/2013/08/composer-repository-for-gitlab-projects.html)
  * [WeMakeCustom](http://www.wemakecustom.com)
 
