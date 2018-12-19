@@ -6,8 +6,7 @@ and if it contains a `composer.json`, adds it to an index.
 This is very similar to the behaviour of Packagist.org / packagist.com
 
 
-
-## Requirement
+## Requirements
  * Php
  * Apache Web Server
  * Gitlab (can be hosted on a different domain)
@@ -16,8 +15,7 @@ This is very similar to the behaviour of Packagist.org / packagist.com
 
  1. Run `composer.phar install`
  2. Copy `confs/samples/gitlab.ini` into `confs/gitlab.ini`, following instructions in comments
- 3. Ensure cache is writable
- 4. Change the TTL as desired (default is 60 seconds)
+ 3. Ensure `cache` directory is writable
  
 https://www.codefactor.io/repository/github/signalr/signalr/badge?style=plastic
 
@@ -44,13 +42,13 @@ Then, to use your repository, add this in the `composer.json` of your project:
     "repositories": [
         {
             "type": "composer",
-            "url": "http://yourgitlabrepository.yourcompany.com/"
+            "url": "https://your_gitlab_composer_repo_url"
         }
     ],
     "config": {
         "gitlab-domains" : [
-            "yourgitlab.yourcompany.com",
-            "yourgitlabrepository.yourcompany.com"
+            "https://your_gitlab_url",
+            "https://your_gitlab_composer_repo_url"
         ]
     },
 }
@@ -68,6 +66,10 @@ You can use the following command template by replacing
 ```
 composer config -g gitlab-oauth.[composer-repository.yourcompany.com] [yourtoken]
 ```
+
+Ater first run file `packages.json` in `cache` directory must exist. Also for ech group/repository an own directory.
+
+
 #### CI
 If your CI needs access to the repository you add inject an environment varible for composer
 ```
@@ -86,13 +88,13 @@ In case you like to develop on this software and run the service locally you may
     "repositories": [
         {
             "type": "composer",
-            "url": "http://yourgitlabrepository.yourcompany.com/"
+            "url": "https://your_gitlab_composer_repo_url"
         }
     ],
     "config": {
         "secure-http": false,
         "gitlab-domains" : [
-            "yourgitlab.yourcompany.com",
+            "https://your_gitlab_url",
             "127.0.0.1"
         ]
     },
@@ -100,20 +102,21 @@ In case you like to develop on this software and run the service locally you may
 ```
 
 
-
 ## Caveats (missing features and known bugs)
  * there is no frontend other then gitlab itself to manage users (if have to manage customers you may need to connect your CRM to gitlab) If you face this issue, detailed feature request are welcome.
 
 ## Changelog
 
+ * 0.05 update docu
  * 0.04 fix: download archives 
  using now gitlab API instead of frontend url because that is not supported in new gitlab version 
  * 0.03 fix: making packigename case insensitive
- * 0.02 
+ * 0.02 refactoring, remove static repository feature, proxy dist downloads,   
  * 0.01 initial release
 
 ## Author
  * [Keywan Ghadami]
+ * [Tobias Merkl]
  * [Sébastien Lavoie](http://blog.lavoie.sl/2013/08/composer-repository-for-gitlab-projects.html)
  * [WeMakeCustom](http://www.wemakecustom.com)
 
