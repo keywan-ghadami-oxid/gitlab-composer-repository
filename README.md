@@ -47,7 +47,8 @@ Then, to use your repository, add this in the `composer.json` of your project:
     ],
     "config": {
         "gitlab-domains" : [
-            "https://your_gitlab_url"
+            "https://your_gitlab_url",
+            "https://your_gitlab_composer_repo_url"
         ]
     },
 }
