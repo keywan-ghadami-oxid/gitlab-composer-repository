@@ -40,7 +40,7 @@ if ($url) {
     $id = $_GET['id'];
     $ref = $_GET['ref'];
 }
-$url = 'projects/' . $id .'/repository/archive.zip?ref='. $ref;
+$url = 'projects/' . $id .'/repository/archive.zip?sha='. $ref;
 $target = $confs['endpoint'] . $url;
 
 
