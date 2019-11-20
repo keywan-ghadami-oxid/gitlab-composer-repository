@@ -1,0 +1,21 @@
+version: '3.7'
+
+services:
+  php:
+    build:
+      context: ./docker/php
+      args:
+        CONTAINER_GID: ${CONTAINER_GID}
+        CONTAINER_UID: ${CONTAINER_UID}
+        CONTAINER_USER: ${CONTAINER_USER}
+    volumes:
+      - ./:/var/www/:cached
+      - ./:/dockerbox:cached
+    user: "${CONTAINER_UID}:${CONTAINER_GID}"
+    working_dir: /var/www/
+    networks:
+      - dev
+    ports:
+      - "8085:8080"
+networks:
+  dev:
