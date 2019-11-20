@@ -94,10 +94,11 @@ class Auth
 
     /**
      * get access token from header
+     * @return string token
      */
     public function getBearerToken()
     {
-        $this->token;
+        return $this->token;
     }
 
     /**
