@@ -14,6 +14,7 @@ class Auth
 {
     protected $confs;
     protected $token;
+    protected $authType;
 
     public function send_401($warning)
     {
@@ -27,22 +28,21 @@ class Auth
     {
         $confs = $this->confs;
 
-        $token = $this->getBearerToken();
-        if (!$token) {
+        if (!$this->readBearerToken()) {
             if ($_SERVER['PHP_AUTH_USER']) {
                 $this->send_401("make sure you have configured gitlab domains" );
             }
             $domain = parse_url($confs['base_url'],PHP_URL_HOST);
-            $this->send_401("STOP: press CTRL-C and run first composer config gitlab-domains $domain");
+            $this->send_401("No token found, make sure you run first composer config gitlab-domains $domain");
         }
 
-        $this->token = $token;
         $client = $this->getClient();
         try {
             $userApi = $client->users();
             $me = $userApi->user();
         } catch (RuntimeException $ex) {
             if ($ex->getCode() == 401) {
+                $token = $this->getBearerToken();
                 $this->send_401("auth failed with token '$token''");
             } else {
                 header($ex->getMessage(), true, 500);
@@ -59,7 +59,7 @@ class Auth
     {
         $confs = $this->confs;
         $client = Client::create($confs['endpoint']);
-        $client->authenticate($this->token, Client::AUTH_OAUTH_TOKEN);
+        $client->authenticate($this->token, $this->authType);
         return $client;
     }
 
@@ -94,19 +94,37 @@ class Auth
 
     /**
      * get access token from header
+     */
+    public function getBearerToken()
+    {
+        $this->token;
+    }
+
+    /**
+     * get access token from header
      * copy right Ngô Văn Thao
      * https://stackoverflow.com/questions/40582161/how-to-properly-use-bearer-tokens
      * */
-    public function getBearerToken() {
+    public function readBearerToken() {
         $headers = $this->getAuthorizationHeader();
         // HEADER: Get the access token from the header
         if (!empty($headers)) {
             if (preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
-                return $matches[1];
+                $this->authType = Client::AUTH_OAUTH_TOKEN;
+                $this->token = $matches[1];
+                return true;
             }
         }
-        return null;
+        $privateToken = $_SERVER['HTTP_PRIVATE_TOKEN'];
+        if ($privateToken) {
+            $this->authType = Client::AUTH_HTTP_TOKEN;
+            $this->token = $privateToken;
+            return true;
+        }
+
+        return false;
     }
+
 
 
 }
