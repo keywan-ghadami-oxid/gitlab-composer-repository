@@ -66,9 +66,12 @@ class RegistryBuilder
      * @return array|false
      */
     public function fetch_composer($project, $ref) {
-        $repos = $this->repos;
+        //$repos = $this->repos;
+        $client = $this->getClient();
+        $repos = $client->api('repositoryFiles');
 
         try {
+
             $c = $repos->getFile($project['id'], 'composer.json', $ref);
 
             if (!isset($c['content'])) {
@@ -313,8 +316,6 @@ class RegistryBuilder
     protected function loadAllProjects()
     {
 
-        $confs = $this->confs;
-
         $client = $this->getClient();
 
         $this->repos = $repos = $client->api('repositories');
@@ -326,18 +327,11 @@ class RegistryBuilder
         $projects = $client->projects;
         $this->projects = $projects;
 
-        $all_projects = array();
+        $confs = $this->confs;
+        $all_projects = [];
         if (!empty($confs['groups'])) {
             $groups = $client->groups;
-            $groupsIterator = new Iterator($groups,'all');
-            // We have to get projects from specifics groups
-            foreach ($groupsIterator as $group) {
-                if (!in_array($group['name'], $confs['groups'], true)) {
-                    continue;
-                }
-                $projectsIterator = new Iterator($groups, 'projects', $group['id']);
-                $all_projects = $this->fetchProjects($projectsIterator, $all_projects);
-            }
+            $all_projects = $this->getProjectsFromGroups($groups, $all_projects);
         } else {
             // We have to get all accessible projects
             $projectsIterator = new Iterator($projects,'all');
@@ -345,6 +339,31 @@ class RegistryBuilder
         }
         return $all_projects;
     }
+
+    /**
+     * @param \Gitlab\Api\Groups $groups
+     * @param $confs
+     * @param array $all_projects
+     * @return array
+     */
+    protected function getProjectsFromGroups(\Gitlab\Api\Groups $groups, array $all_projects)
+    {
+        $confs = $this->confs;
+
+        $groupsIterator = new Iterator($groups, 'all');
+        // We have to get projects from specifics groups
+        print_r( $confs['groups']);
+        foreach ($groupsIterator as $group) {
+            print $group['name']."\n";
+            if (!in_array($group['name'], $confs['groups'], true)) {
+                continue;
+            }
+            $projectsIterator = new Iterator($groups, 'projects', $group['id']);
+            $all_projects = $this->fetchProjects($projectsIterator, $all_projects);
+        }
+        return $all_projects;
+    }
+
 
     /**
      * @param $projectsIterator
@@ -359,4 +378,55 @@ class RegistryBuilder
         return $all_projects;
     }
 
+    public function outputFile()
+    {
+        $registry = new RegistryBuilder();
+        $registry->setConfig($this->confs);
+        $packageList = $registry->getPackageList();
+
+        $packageName = $_GET['p'];
+
+        if (!isset($packageList[$packageName])) {
+            $this->notFound();
+            return;
+        }
+
+        $a = new Auth();
+        $a->setConfig($this->confs);
+        $a->auth();
+        $client = $a->getClient();
+
+        $file = __DIR__ . "/../cache/packages.json";
+        $mtime = filemtime($file);
+
+        header('Content-Type: application/json');
+        header('Last-Modified: ' . gmdate('r', $mtime));
+        header('Cache-Control: max-age=10');
+        if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) && ($since = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE'])) && $since >= $mtime) {
+            header('HTTP/1.0 304 Not Modified');
+            return;
+        }
+        print '{"packages":{"';
+        $first = true;
+        foreach ($packageList as $project) {
+            if (!$first) {
+                print ",";
+            }
+            $first = false;
+            $file = __DIR__ . "/../cache/{$project['path_with_namespace']}.json";
+            try {
+                $tagList = $client->repositories()->tags($project['id']);
+            } catch (\Gitlab\Exception\RuntimeException $ex) {
+                //for security reason do not tell the client that he is not allowed to access that module
+            }
+            if (!$tagList) {
+                //for security reason do not tell the client that there is a module with that name
+                continue;
+            }
+
+            $versions = file_get_contents($file);
+            print $packageName . '":' . $versions;
+        }
+        print '}}';
+    }
 }

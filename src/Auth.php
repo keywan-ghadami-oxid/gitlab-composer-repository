@@ -123,6 +123,12 @@ class Auth
             return true;
         }
 
+        if (isset($this->confs['insecure']) && !empty($this->confs['insecure'])) {
+            $this->token = $this->confs['api_key'];
+            $this->authType = Client::AUTH_URL_TOKEN;
+            return true;
+        }
+
         return false;
     }
 
