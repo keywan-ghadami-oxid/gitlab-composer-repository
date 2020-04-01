@@ -105,7 +105,13 @@ In case you like to develop on this software and run the service locally you may
  * there is no frontend other then gitlab itself to manage users (if have to manage customers you may need to connect your CRM to gitlab) If you face this issue, detailed feature request are welcome.
 
 ## Changelog
+ * 0.06 
 
+   - use sha instead of ref to get the correct archive.zip
+     see also https://gitlab.com/gitlab-org/gitlab-ce/issues/31530
+   - support for gitlab personal tokens
+   - allow insecure debug mode
+   - WIP: for performance reason: experimental support to output full list of packages instead of lazy mode
  * 0.05 update docu
  * 0.04 fix: download archives 
  using now gitlab API instead of frontend url because that is not supported in new gitlab version 
