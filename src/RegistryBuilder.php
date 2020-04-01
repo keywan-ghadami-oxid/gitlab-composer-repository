@@ -34,11 +34,13 @@ class RegistryBuilder
         foreach ($all_projects as $project) {
             $package = $this->load_data($project);
             if ($package) {
-                $package_name = $this->get_package_name($package);
-                $projects[$package_name] = [
-                    'path_with_namespace' => $project['path_with_namespace'],
-                    'name' => $project['name'],
-                    'id' => $project['id'] ];
+                $package_names = $this->get_package_names($package);
+                foreach ($package_names as $package_name) {
+                    $projects[$package_name] = [
+                        'path_with_namespace' => $project['path_with_namespace'],
+                        'name' => $project['name'],
+                        'id' => $project['id']];
+                }
             }
         }
 
@@ -257,7 +259,12 @@ class RegistryBuilder
     function isComposerPackage($project) {
         $composerData = $this->getDefaultBranch($project);
 
-        return $this->get_package_name($composerData);
+        $data = reset($composerData);
+        if (!isset($data['name'])) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -266,13 +273,14 @@ class RegistryBuilder
      * @param array $composerData
      * @return string|bool The name of the project
      */
-    function get_package_name($composerData) {
-        $data = reset($composerData);
-        if (!isset($data['name'])) {
-            return false;
+    function get_package_names($composerData) {
+        $names = [];
+        foreach ($composerData as $data) {
+            if (isset($data['name'])) {
+                $names[] = strtolower($data['name']);
+            }
         }
-
-        return strtolower($data['name']);
+        return $names;
     }
 
 
@@ -352,9 +360,7 @@ class RegistryBuilder
 
         $groupsIterator = new Iterator($groups, 'all');
         // We have to get projects from specifics groups
-        print_r( $confs['groups']);
         foreach ($groupsIterator as $group) {
-            print $group['name']."\n";
             if (!in_array($group['name'], $confs['groups'], true)) {
                 continue;
             }
@@ -384,20 +390,13 @@ class RegistryBuilder
         $registry->setConfig($this->confs);
         $packageList = $registry->getPackageList();
 
-        $packageName = $_GET['p'];
-
-        if (!isset($packageList[$packageName])) {
-            $this->notFound();
-            return;
-        }
-
         $a = new Auth();
         $a->setConfig($this->confs);
         $a->auth();
         $client = $a->getClient();
 
-        $file = __DIR__ . "/../cache/packages.json";
-        $mtime = filemtime($file);
+        $cacheDir = __DIR__ . "/../cache";
+        $mtime = filemtime($cacheDir);
 
         header('Content-Type: application/json');
         header('Last-Modified: ' . gmdate('r', $mtime));
@@ -406,27 +405,43 @@ class RegistryBuilder
             header('HTTP/1.0 304 Not Modified');
             return;
         }
-        print '{"packages":{"';
-        $first = true;
-        foreach ($packageList as $project) {
-            if (!$first) {
-                print ",";
-            }
-            $first = false;
-            $file = __DIR__ . "/../cache/{$project['path_with_namespace']}.json";
-            try {
-                $tagList = $client->repositories()->tags($project['id']);
-            } catch (\Gitlab\Exception\RuntimeException $ex) {
-                //for security reason do not tell the client that he is not allowed to access that module
-            }
-            if (!$tagList) {
-                //for security reason do not tell the client that there is a module with that name
-                continue;
-            }
-
-            $versions = file_get_contents($file);
-            print $packageName . '":' . $versions;
+        $userCacheDir = $cacheDir. "/user";
+        if(! is_dir($userCacheDir)) {
+            mkdir($userCacheDir);
         }
-        print '}}';
+        $name = $a->getUserName();
+        $userCacheFile = $userCacheDir . "/$name.json";
+        $out = "";
+        $filemTime = file_exists($userCacheFile) ? filemtime($userCacheFile) : false;
+        if ($filemTime !== false && $filemTime > $mtime) {
+            $out = file_get_contents($userCacheFile);
+        }
+        if (!$out) {
+            $out = '{"packages":{';
+            $first = true;
+            foreach ($packageList as $packageName => $project) {
+                try {
+                    $tagList = $client->repositories()->tags($project['id']);
+                } catch (\Gitlab\Exception\RuntimeException $ex) {
+                    //for security reason do not tell the client that he is not allowed to access that module
+                }
+                if (!$tagList) {
+                    //for security reason do not tell the client that there is a module with that name
+                    continue;
+                }
+                if (!$first) {
+                    $out .= ",";
+                }
+
+                $first = false;
+                $packageCacheFile = __DIR__ . "/../cache/{$project['path_with_namespace']}.json";
+
+                $versions = file_get_contents($packageCacheFile);
+                $out .= '"'.$packageName . '":' . $versions;
+            }
+            $out .= '}}';
+            file_put_contents($userCacheFile, $out);
+        }
+        print $out;
     }
 }

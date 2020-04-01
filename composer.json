@@ -2,7 +2,8 @@
     "require": {
         "m4tthumphrey/php-gitlab-api": "^9.0",
         "php-http/guzzle6-adapter": "^1.1",
-        "ext-json": "*"
+        "ext-json": "*",
+        "php": ">=5.6"
     }, 
     "autoload": {
         "psr-4": {

@@ -3,4 +3,5 @@ SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 RewriteEngine On
 RewriteBase /
 RewriteRule .*/token$ oauthtoken.php
-RewriteRule ^$ packages.json [R=302,L]
+#remove the following line to use lazy loading of packages
+RewriteRule ^packages.json$ packages.php [PT]

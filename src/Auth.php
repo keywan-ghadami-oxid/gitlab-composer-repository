@@ -15,7 +15,7 @@ class Auth
     protected $confs;
     protected $token;
     protected $authType;
-
+    protected $username;
     public function send_401($warning)
     {
         header("HTTP/1.0 401 UNAUTHORIZED", true, 401);
@@ -40,6 +40,7 @@ class Auth
         try {
             $userApi = $client->users();
             $me = $userApi->user();
+            $this->username = $me['username'];
         } catch (RuntimeException $ex) {
             if ($ex->getCode() == 401) {
                 $token = $this->getBearerToken();
@@ -49,6 +50,11 @@ class Auth
             }
         }
 
+    }
+
+    public function getUserName()
+    {
+        return $this->username;
     }
 
     /**
@@ -116,8 +122,8 @@ class Auth
                 return true;
             }
         }
-        $privateToken = $_SERVER['HTTP_PRIVATE_TOKEN'];
-        if ($privateToken) {
+        if (isset($_SERVER['HTTP_PRIVATE_TOKEN'])) {
+            $privateToken = $_SERVER['HTTP_PRIVATE_TOKEN'];
             $this->authType = Client::AUTH_HTTP_TOKEN;
             $this->token = $privateToken;
             return true;
