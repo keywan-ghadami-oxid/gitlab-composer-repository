@@ -1,3 +1,11 @@
 /confs/static-repos.json
 /vendor
 /composer.lock
+.bash
+.lesshst
+.ssh
+.viminfo
+backups
+error_docs
+httpdocs
+logs
