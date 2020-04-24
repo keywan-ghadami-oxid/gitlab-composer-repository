@@ -19,7 +19,10 @@ class RegistryBuilder
     public function getPackageList() {
         $packages_file = $this->packages_file;
         // Regenerate packages_file is need
-        if (!file_exists($packages_file) || filemtime($packages_file) + (1000*60) < time()) {
+        $cacheDir = __DIR__ . "/../cache";
+        $mtime = filemtime($cacheDir);
+        $cacheTime = filemtime($packages_file);
+        if (!file_exists($packages_file) || $mtime > $cacheTime) {
             $this->build();
         }
         $packageList = json_decode(file_get_contents($this->packages_file), true);
@@ -167,6 +170,7 @@ class RegistryBuilder
         }
 
         file_put_contents($file,json_encode($datas,JSON_PRETTY_PRINT));
+        touch(__DIR__ . "/../cache");
     }
 
     /**
