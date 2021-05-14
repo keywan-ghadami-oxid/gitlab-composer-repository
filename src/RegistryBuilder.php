@@ -182,7 +182,8 @@ class RegistryBuilder
         $repos = $this->repos;
         $datas = array();
         try {
-            foreach (array_merge($repos->branches($project['id']), $repos->tags($project['id'])) as $ref) {
+            $tags = $this->getTags($this->client, $project['id']);
+            foreach (array_merge($repos->branches($project['id']), $tags) as $ref) {
                 foreach ($this->fetch_ref($project, $ref) as $version => $data) {
                     $datas[$version] = $data;
                 }
@@ -425,7 +426,7 @@ class RegistryBuilder
             $first = true;
             foreach ($packageList as $packageName => $project) {
                 try {
-                    $tagList = $client->repositories()->tags($project['id']);
+                    $tagList = $this->getTags($client, $project['id']);
                 } catch (\Gitlab\Exception\RuntimeException $ex) {
                     //for security reason do not tell the client that he is not allowed to access that module
                 }
@@ -447,5 +448,18 @@ class RegistryBuilder
             file_put_contents($userCacheFile, $out);
         }
         print $out;
+    }
+
+    /**
+     * @param Client $client
+     * @param $id
+     * @return array
+     */
+    protected function getTags(Client $client, $id)
+    {
+        $repositories = $client->repositories();
+        $projectsIterator = new Iterator($repositories, 'tags', $id);
+        $tagList = iterator_to_array($projectsIterator);
+        return $tagList;
     }
 }
